@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memo Organizer - API Free</title>
+  <style>
+    /* 기본 레이아웃 및 폰트 설정 (시인성 중심) */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: #f4f7fb;
+      color: #2d3748;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .container {
+      background-color: #ffffff;
+      width: 100%;
+      max-width: 680px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+      padding: 36px 32px;
+    }
+
+    /* 상단 헤더 */
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #edf2f7;
+    }
+
+    h1 {
+      font-size: 26px;
+      font-weight: 700;
+      color: #1a202c;
+    }
+
+    /* 공통 폼 스타일 */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #4a5568;
+    }
+
+    input[type="password"],
+    input[type="text"],
+    textarea {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="password"]:focus,
+    input[type="text"]:focus,
+    textarea:focus {
+      border-color: #3182ce;
+    }
+
+    input:disabled,
+    textarea:disabled {
+      background-color: #f7fafc;
+      color: #a0aec0;
+    }
+
+    textarea {
+      height: 140px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    /* 공통 버튼 스타일 */
+    button {
+      width: 100%;
+      padding: 15px;
+      font-size: 17px;
+      font-weight: 700;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background-color 0.2s, opacity 0.2s;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background-color: #3182ce;
+      color: #ffffff;
+      margin-top: 8px;
+    }
+    .btn-primary:hover:not(:disabled) {
+      background-color: #2b6cb0;
+    }
+
+    .btn-success {
+      background-color: #38a169;
+      color: #ffffff;
+      margin-top: 12px;
+    }
+    .btn-success:hover:not(:disabled) {
+      background-color: #2f855a;
+    }
+
+    .btn-outline {
+      width: auto;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      background-color: transparent;
+      border: 2px solid #e2e8f0;
+      color: #718096;
+    }
+    .btn-outline:hover {
+      background-color: #edf2f7;
+      color: #2d3748;
+    }
+
+    /* 알림 메시지 영역 */
+    .notice-box {
+      background-color: #ebf8ff;
+      border-left: 4px solid #3182ce;
+      padding: 12px 16px;
+      font-size: 14px;
+      color: #2b6cb0;
+      margin-bottom: 24px;
+      line-height: 1.5;
+      border-radius: 4px;
+    }
+
+    .status-box {
+      margin-top: 18px;
+      padding: 16px;
+      border-radius: 8px;
+      font-size: 15px;
+      line-height: 1.4;
+      display: none;
+    }
+    .status-success {
+      background-color: #f0fff4;
+      border: 1px solid #9ae6b4;
+      color: #22543d;
+    }
+    .status-error {
+      background-color: #fff5f5;
+      border: 1px solid #feb2b2;
+      color: #9b2c2c;
+    }
+
+    /* 결과 카드 렌더링 영역 */
+    .results-container {
+      margin-top: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .memo-card {
+      background-color: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-left-width: 6px;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    
+    .category-일정 { border-left-color: #3182ce; }
+    .category-장보기 { border-left-color: #38a169; }
+    .category-업무 { border-left-color: #dd6b20; }
+    .category-기타 { border-left-color: #805ad5; }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .card-badge {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background-color: #edf2f7;
+      color: #4a5568;
+    }
+
+    .card-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #1a202c;
+      margin-bottom: 6px;
+    }
+
+    .card-meta {
+      font-size: 14px;
+      color: #718096;
+      display: flex;
+      gap: 12px;
+    }
+
+    .priority-high {
+      color: #e53e3e;
+      font-weight: 600;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <section id="app-section">
+      <div class="header-bar">
+        <h1>Memo Organizer</h1>
+        <button id="btnClear" class="btn-outline">전체 지우기</button>
+      </div>
+
+      <div class="notice-box">
+        API 없이 브라우저에서 바로 사용하는 메모 정리 도구입니다.<br>
+        입력한 내용은 외부 서버로 전송되지 않습니다.
+      </div>
+
+      <div class="form-group">
+        <label for="memoInput">메모 입력</label>
+        <textarea id="memoInput" placeholder="자유롭게 메모를 입력하세요.&#10;예: 내일 오후 3시 치과 가기, 오는 길에 우유와 계란 사기, 금요일까지 월간보고서 완성"></textarea>
+      </div>
+
+      <button id="btnOrganize" class="btn-primary">메모 정리하기</button>
+
+      <div id="appStatus" class="status-box"></div>
+      <div id="resultsArea" class="results-container"></div>
+    </section>
+  </div>
+
+  <script>
+    const memoInput = document.getElementById("memoInput");
+    const btnOrganize = document.getElementById("btnOrganize");
+    const btnClear = document.getElementById("btnClear");
+    const appStatus = document.getElementById("appStatus");
+    const resultsArea = document.getElementById("resultsArea");
+
+    btnOrganize.addEventListener("click", () => {
+      const memoText = memoInput.value.trim();
+      if (!memoText) {
+        showStatus(appStatus, "error", "정리할 메모 내용을 입력해주세요.");
+        return;
+      }
+      const items = organizeMemo(memoText);
+      renderCards(items);
+      showStatus(appStatus, "success", `✓ ${items.length}개 항목으로 정리했습니다.`);
+    });
+
+    btnClear.addEventListener("click", () => {
+      memoInput.value = "";
+      resultsArea.innerHTML = "";
+      appStatus.style.display = "none";
+    });
+
+    function organizeMemo(text) {
+      const parts = text
+        .split(/\n|,|;| 그리고 | 및 /)
+        .map(v => v.trim())
+        .filter(Boolean);
+
+      return parts.map((title) => ({
+        title,
+        category: detectCategory(title),
+        date: detectDate(title),
+        priority: detectPriority(title)
+      }));
+    }
+
+    function detectCategory(text) {
+      const t = text.toLowerCase();
+      const shopping = ["사기", "구매", "장보기", "마트", "우유", "계란", "과일", "채소", "고기", "빵", "물", "휴지", "세제"];
+      const work = ["보고서", "업무", "회의", "제출", "마감", "프로젝트", "메일", "이메일", "견적", "계약", "자료", "정리", "엑셀", "발송"];
+      const schedule = ["약속", "예약", "병원", "치과", "미용실", "수업", "운동", "필라테스", "여행", "방문", "만나", "미팅", "출근", "퇴근"];
+      if (shopping.some(k => t.includes(k))) return "장보기";
+      if (work.some(k => t.includes(k))) return "업무";
+      if (schedule.some(k => t.includes(k)) || detectDate(text)) return "일정";
+      return "기타";
+    }
+
+    function detectDate(text) {
+      const patterns = [
+        /(오늘|내일|모레|이번\s*주|다음\s*주|월요일|화요일|수요일|목요일|금요일|토요일|일요일)/,
+        /(오전|오후)?\s*\d{1,2}\s*시(?:\s*\d{1,2}\s*분)?/,
+        /\d{1,2}\s*월\s*\d{1,2}\s*일/,
+        /\d{4}[-./]\d{1,2}[-./]\d{1,2}/
+      ];
+      const found = patterns.map(p => text.match(p)?.[0]).filter(Boolean);
+      return found.join(" ");
+    }
+
+    function detectPriority(text) {
+      const high = ["중요", "긴급", "꼭", "반드시", "마감", "오늘까지", "내일까지", "급함"];
+      return high.some(k => text.includes(k)) ? "중요" : "보통";
+    }
+
+    function renderCards(items) {
+      if (!Array.isArray(items) || items.length === 0) {
+        resultsArea.innerHTML = "<p style='color:#718096;text-align:center;'>정리할 내용이 없습니다.</p>";
+        return;
+      }
+      resultsArea.innerHTML = "";
+      items.forEach(item => {
+        const card = document.createElement("div");
+        card.className = `memo-card category-${item.category || '기타'}`;
+        const isHighPriority = item.priority === "중요";
+        const priorityHtml = `<span class="${isHighPriority ? 'priority-high' : ''}">우선순위: ${escapeHtml(item.priority)}</span>`;
+        const dateHtml = item.date ? `<span>일시: ${escapeHtml(item.date)}</span>` : '';
+        card.innerHTML = `
+          <div class="card-header">
+            <span class="card-badge">[ ${escapeHtml(item.category)} ]</span>
+            <div class="card-meta">${priorityHtml}</div>
+          </div>
+          <div class="card-title">${escapeHtml(item.title)}</div>
+          ${dateHtml ? `<div class="card-meta">${dateHtml}</div>` : ''}
+        `;
+        resultsArea.appendChild(card);
+      });
+    }
+
+    function showStatus(element, type, message) {
+      element.className = `status-box status-${type}`;
+      element.innerHTML = message;
+      element.style.display = "block";
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>

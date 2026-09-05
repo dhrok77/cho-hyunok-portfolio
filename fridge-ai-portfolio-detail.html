@@ -1,0 +1,1767 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>냉장고 AI 도우미</title>
+
+  <style>
+    /* =========================================================
+       1. 기본 디자인
+       - 외부 CSS 파일 없이 이 파일 안에서 모든 디자인을 처리합니다.
+       ========================================================= */
+    :root {
+      --bg: #f4f7f5;
+      --card: #ffffff;
+      --green: #1f7a5a;
+      --green-dark: #155d44;
+      --green-soft: #eaf6f0;
+      --navy: #203248;
+      --text: #24313a;
+      --muted: #6f7d85;
+      --line: #dfe7e2;
+      --danger: #c94141;
+      --warning: #a86d00;
+      --shadow: 0 14px 40px rgba(25, 55, 44, 0.09);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family:
+        "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo",
+        Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, #e7f5ef 0, transparent 36%),
+        linear-gradient(135deg, #f7faf8, #eef3f1);
+      color: var(--text);
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    .app-shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 28px auto 60px;
+    }
+
+    .hero {
+      display: flex;
+      gap: 22px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 22px;
+      padding: 26px 28px;
+      border-radius: 26px;
+      background: linear-gradient(135deg, #193a31, #235d4a);
+      color: white;
+      box-shadow: var(--shadow);
+    }
+
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: clamp(28px, 4vw, 42px);
+      letter-spacing: -0.04em;
+    }
+
+    .hero p {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.82);
+      line-height: 1.65;
+    }
+
+    .hero-icon {
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      width: 94px;
+      height: 94px;
+      border-radius: 26px;
+      background: rgba(255, 255, 255, 0.12);
+      font-size: 50px;
+    }
+
+    .step-strip {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin-bottom: 22px;
+    }
+
+    .step-chip {
+      padding: 13px 10px;
+      text-align: center;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255,255,255,.78);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .step-chip.active {
+      color: var(--green-dark);
+      background: var(--green-soft);
+      border-color: #b9ddcd;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(220, 231, 224, 0.85);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 26px;
+    }
+
+    .connect-card {
+      width: min(620px, 100%);
+      margin: 0 auto;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0 0 20px;
+      color: var(--navy);
+      font-size: 22px;
+      letter-spacing: -0.03em;
+    }
+
+    .section-title .number {
+      display: inline-grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--green-soft);
+      color: var(--green-dark);
+      font-size: 14px;
+    }
+
+    .field {
+      margin-bottom: 18px;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--navy);
+    }
+
+    .input,
+    .select {
+      width: 100%;
+      height: 48px;
+      border: 1px solid #cfdad4;
+      border-radius: 12px;
+      padding: 0 14px;
+      outline: none;
+      background: #fff;
+      color: var(--text);
+      transition: 0.2s ease;
+    }
+
+    .input:focus,
+    .select:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 4px rgba(31,122,90,.10);
+    }
+
+    .notice {
+      margin: 18px 0;
+      padding: 15px 16px;
+      border-radius: 14px;
+      background: #fff8e8;
+      border: 1px solid #f0dfb8;
+      color: #7e5d17;
+      line-height: 1.6;
+      font-size: 13px;
+    }
+
+    .button {
+      border: 0;
+      border-radius: 12px;
+      padding: 13px 18px;
+      font-weight: 800;
+      transition: transform .15s ease, filter .15s ease;
+    }
+
+    .button:not(:disabled):hover {
+      transform: translateY(-1px);
+      filter: brightness(.97);
+    }
+
+    .button.primary {
+      color: white;
+      background: var(--green);
+    }
+
+    .button.secondary {
+      color: var(--green-dark);
+      background: var(--green-soft);
+      border: 1px solid #c8e5d8;
+    }
+
+    .button.danger {
+      color: white;
+      background: var(--danger);
+    }
+
+    .button.ghost {
+      color: var(--navy);
+      background: #f3f5f6;
+      border: 1px solid #e1e6e8;
+    }
+
+    .button.full {
+      width: 100%;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .status {
+      display: none;
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      font-weight: 800;
+      line-height: 1.5;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      color: #176145;
+      background: #eaf7f0;
+      border: 1px solid #c8e8d7;
+    }
+
+    .status.error {
+      color: #a62f2f;
+      background: #fff0f0;
+      border: 1px solid #f0cccc;
+    }
+
+    .status.info {
+      color: #36556d;
+      background: #edf5fb;
+      border: 1px solid #d3e5f2;
+    }
+
+    #mainApp {
+      display: none;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 18px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: white;
+      border: 1px solid var(--line);
+      box-shadow: 0 8px 24px rgba(25, 55, 44, 0.06);
+    }
+
+    .connected-badge {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-weight: 800;
+      color: var(--green-dark);
+    }
+
+    .connected-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #28a36f;
+      box-shadow: 0 0 0 5px rgba(40,163,111,.12);
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .stack {
+      display: grid;
+      gap: 20px;
+    }
+
+    .upload-zone {
+      position: relative;
+      min-height: 350px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      border-radius: 18px;
+      border: 2px dashed #c5d7ce;
+      background: #f8fbf9;
+    }
+
+    .preview-image {
+      display: none;
+      width: 100%;
+      max-height: 510px;
+      object-fit: contain;
+      background: #eef2ef;
+    }
+
+    .empty-preview {
+      padding: 38px 24px;
+      text-align: center;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .empty-preview .big {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 54px;
+    }
+
+    .upload-controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .helper {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .loading {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      margin: 15px 0 0;
+      color: var(--green-dark);
+      font-weight: 800;
+    }
+
+    .loading.show {
+      display: flex;
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 3px solid #d7e9e0;
+      border-top-color: var(--green);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .ingredient-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .ingredient-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto auto;
+      align-items: center;
+      gap: 10px;
+      min-height: 54px;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fbfcfb;
+    }
+
+    .ingredient-name {
+      min-width: 0;
+      font-weight: 800;
+      word-break: break-word;
+    }
+
+    .confidence {
+      display: inline-block;
+      margin-left: 8px;
+      padding: 3px 7px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 800;
+      vertical-align: 2px;
+    }
+
+    .confidence.high {
+      color: #176145;
+      background: #e1f4ea;
+    }
+
+    .confidence.medium {
+      color: #8a6400;
+      background: #fff2cf;
+    }
+
+    .confidence.uncertain {
+      color: #8a4b20;
+      background: #fbe7db;
+    }
+
+    .mini-btn {
+      border: 0;
+      border-radius: 9px;
+      padding: 7px 9px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .mini-btn.edit {
+      color: #315771;
+      background: #eaf3f9;
+    }
+
+    .mini-btn.delete {
+      color: #9b3030;
+      background: #fdecec;
+    }
+
+    .empty-list {
+      padding: 28px 18px;
+      text-align: center;
+      color: var(--muted);
+      border: 1px dashed #d7e0db;
+      border-radius: 14px;
+      line-height: 1.6;
+    }
+
+    .recommendations {
+      display: grid;
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .recipe-card {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(180deg, #ffffff, #fbfdfc);
+    }
+
+    .recipe-number {
+      display: inline-grid;
+      place-items: center;
+      width: 27px;
+      height: 27px;
+      margin-right: 7px;
+      border-radius: 9px;
+      color: white;
+      background: var(--green);
+      font-size: 12px;
+    }
+
+    .recipe-card h3 {
+      margin: 0 0 14px;
+      color: var(--navy);
+      font-size: 19px;
+    }
+
+    .recipe-grid {
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      gap: 8px 12px;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .recipe-label {
+      font-weight: 800;
+      color: var(--green-dark);
+    }
+
+    .footer-note {
+      margin-top: 22px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    /* 작은 화면(스마트폰)에서는 한 줄 배치를 세로로 바꿉니다. */
+    @media (max-width: 820px) {
+      .app-shell {
+        width: min(100% - 20px, 1180px);
+        margin-top: 10px;
+      }
+
+      .hero {
+        padding: 22px;
+      }
+
+      .hero-icon {
+        display: none;
+      }
+
+      .step-strip {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .card {
+        padding: 19px;
+      }
+
+      .ingredient-row {
+        grid-template-columns: auto 1fr auto;
+      }
+
+      .ingredient-row .delete-cell {
+        grid-column: 3;
+      }
+
+      .recipe-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+
+    /* ===== 포트폴리오 소개 / 데모 모드 ===== */
+    .portfolio-panel { margin-bottom: 24px; padding: 30px; border-radius: 28px; background: #fff; border: 1px solid var(--line); box-shadow: var(--shadow); }
+    .portfolio-kicker { color: var(--green); font-weight: 900; letter-spacing: .08em; font-size: 12px; }
+    .portfolio-title { margin: 8px 0 10px; color: var(--navy); font-size: clamp(26px,4vw,40px); letter-spacing: -.04em; }
+    .portfolio-desc { margin:0; color:var(--muted); line-height:1.75; max-width:860px; }
+    .portfolio-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:22px; }
+    .metric-card { padding:17px; border-radius:16px; background:#f8fbf9; border:1px solid var(--line); }
+    .metric-card b { display:block; color:var(--navy); font-size:15px; margin-bottom:6px; }
+    .metric-card span { color:var(--muted); font-size:12px; line-height:1.55; }
+    .portfolio-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:22px; }
+    .flow-section, .shots-section { margin-bottom:24px; }
+    .flowchart { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; align-items:stretch; }
+    .flow-node { position:relative; padding:18px 14px; min-height:118px; border-radius:18px; border:1px solid #cfe1d8; background:linear-gradient(180deg,#fff,#f4faf7); text-align:center; }
+    .flow-node .n { display:inline-grid; place-items:center; width:28px; height:28px; border-radius:50%; background:var(--green); color:#fff; font-weight:900; font-size:12px; margin-bottom:8px; }
+    .flow-node b { display:block; color:var(--navy); font-size:14px; }
+    .flow-node small { display:block; margin-top:6px; color:var(--muted); line-height:1.5; }
+    .flow-node:not(:last-child)::after { content:'→'; position:absolute; right:-19px; top:43px; color:var(--green); font-size:24px; font-weight:900; z-index:2; }
+    .shot-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+    .shot-card { overflow:hidden; border-radius:18px; border:1px solid var(--line); background:#fff; }
+    .shot-card img { display:block; width:100%; aspect-ratio:16/10; object-fit:cover; object-position:top; background:#eef3f1; }
+    .shot-card .caption { padding:14px 15px; }
+    .shot-card b { display:block; color:var(--navy); margin-bottom:5px; }
+    .shot-card span { color:var(--muted); font-size:12px; line-height:1.5; }
+    .demo-ribbon { display:none; margin:0 0 18px; padding:12px 15px; border-radius:14px; background:#eef8ff; border:1px solid #cfe7f6; color:#315a73; font-size:13px; font-weight:800; }
+    .demo-ribbon.show { display:block; }
+    @media (max-width:900px){ .portfolio-grid{grid-template-columns:repeat(2,1fr)} .flowchart{grid-template-columns:1fr} .flow-node:not(:last-child)::after{content:'↓';right:auto;left:50%;top:auto;bottom:-23px;transform:translateX(-50%)} .shot-grid{grid-template-columns:1fr} }
+
+  </style>
+</head>
+
+<body>
+  <main class="app-shell">
+
+    <section class="portfolio-panel" id="portfolioIntro">
+      <div class="portfolio-kicker">PORTFOLIO PROJECT · WEB APP</div>
+      <h1 class="portfolio-title">냉장고 AI 도우미</h1>
+      <p class="portfolio-desc">냉장고 사진을 바탕으로 식재료를 확인하고, 사용자가 직접 결과를 검토·수정한 뒤 활용 가능한 요리를 추천받는 웹 기반 생활 보조 도구입니다. 포트폴리오에서는 API 키 없이도 전체 사용 흐름을 체험할 수 있도록 데모 모드를 함께 구성했습니다.</p>
+      <div class="portfolio-grid">
+        <div class="metric-card"><b>기획</b><span>사용 흐름 설계 · 화면 구성 · 예외 상황 정의</span></div>
+        <div class="metric-card"><b>구현</b><span>HTML · CSS · JavaScript 단일 파일 웹앱</span></div>
+        <div class="metric-card"><b>핵심 기능</b><span>사진 선택 · 식재료 확인/수정 · 요리 추천</span></div>
+        <div class="metric-card"><b>포트폴리오 데모</b><span>API 없이 샘플 데이터로 모든 핵심 기능 체험</span></div>
+      </div>
+      <div class="portfolio-actions">
+        <button id="startDemoBtn" class="button primary">▶ API 없이 체험하기</button>
+        <button id="goRealBtn" class="button secondary">실제 API 연결 화면 보기</button>
+      </div>
+    </section>
+
+    <section class="card flow-section">
+      <h2 class="section-title"><span class="number">↳</span>프로그램 순서도</h2>
+      <div class="flowchart">
+        <div class="flow-node"><span class="n">1</span><b>냉장고 사진 선택</b><small>JPG/PNG 이미지를 불러와 미리보기</small></div>
+        <div class="flow-node"><span class="n">2</span><b>식재료 분석</b><small>사진에서 확인 가능한 재료 목록 생성</small></div>
+        <div class="flow-node"><span class="n">3</span><b>사용자 검토</b><small>체크 · 이름 수정 · 삭제 · 직접 추가</small></div>
+        <div class="flow-node"><span class="n">4</span><b>최종 재료 선택</b><small>실제로 사용할 재료만 확정</small></div>
+        <div class="flow-node"><span class="n">5</span><b>요리 3개 추천</b><small>사용 재료 · 추가 재료 · 간단 조리법 제공</small></div>
+      </div>
+    </section>
+
+    <section class="card shots-section" id="shotsSection">
+      <h2 class="section-title"><span class="number">▣</span>주요 화면 캡처</h2>
+      <div class="shot-grid">
+        <article class="shot-card"><img id="shot1" src="data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%221200%22%20height%3D%22750%22%3E%3Crect%20width%3D%221200%22%20height%3D%22750%22%20fill%3D%22%23f4f7f5%22/%3E%3Crect%20x%3D%2235%22%20y%3D%2235%22%20width%3D%221130%22%20height%3D%22110%22%20rx%3D%2225%22%20fill%3D%22%23193a31%22/%3E%3Ctext%20x%3D%2270%22%20y%3D%2290%22%20font-family%3D%22Arial%22%20font-size%3D%2234%22%20font-weight%3D%22700%22%20fill%3D%22white%22%3E%F0%9F%A5%AC%20%EB%83%89%EC%9E%A5%EA%B3%A0%20AI%20%EB%8F%84%EC%9A%B0%EB%AF%B8%3C/text%3E%3Ctext%20x%3D%2270%22%20y%3D%22120%22%20font-family%3D%22Arial%22%20font-size%3D%2218%22%20fill%3D%22%23dbe7e1%22%3E%EB%83%89%EC%9E%A5%EA%B3%A0%20%EC%82%AC%EC%A7%84%EC%97%90%EC%84%9C%20%EC%8B%9D%EC%9E%AC%EB%A3%8C%EB%A5%BC%20%EC%B0%BE%EA%B3%A0%20%EC%9A%94%EB%A6%AC%EB%A5%BC%20%EC%B6%94%EC%B2%9C%ED%95%A9%EB%8B%88%EB%8B%A4.%3C/text%3E%3Crect%20x%3D%2245%22%20y%3D%22185%22%20width%3D%22530%22%20height%3D%22500%22%20rx%3D%2224%22%20fill%3D%22white%22%20stroke%3D%22%23dfe7e2%22/%3E%3Ctext%20x%3D%2275%22%20y%3D%22235%22%20font-family%3D%22Arial%22%20font-size%3D%2226%22%20font-weight%3D%22700%22%20fill%3D%22%23203248%22%3E2%20%20%EB%83%89%EC%9E%A5%EA%B3%A0%20%EC%82%AC%EC%A7%84%3C/text%3E%3Crect%20x%3D%2275%22%20y%3D%22275%22%20width%3D%22470%22%20height%3D%22300%22%20rx%3D%2218%22%20fill%3D%22%23f8fbf9%22%20stroke%3D%22%23c5d7ce%22%20stroke-width%3D%223%22%20stroke-dasharray%3D%2210%208%22/%3E%3Ctext%20x%3D%22268%22%20y%3D%22400%22%20font-family%3D%22Arial%22%20font-size%3D%2272%22%3E%F0%9F%93%B7%3C/text%3E%3Ctext%20x%3D%22190%22%20y%3D%22460%22%20font-family%3D%22Arial%22%20font-size%3D%2220%22%20fill%3D%22%236f7d85%22%3EJPG%20%EB%98%90%EB%8A%94%20PNG%20%EB%83%89%EC%9E%A5%EA%B3%A0%20%EC%82%AC%EC%A7%84%20%EC%84%A0%ED%83%9D%3C/text%3E%3Crect%20x%3D%2275%22%20y%3D%22610%22%20width%3D%22150%22%20height%3D%2248%22%20rx%3D%2212%22%20fill%3D%22%23eaf6f0%22/%3E%3Ctext%20x%3D%22110%22%20y%3D%22641%22%20font-family%3D%22Arial%22%20font-size%3D%2218%22%20font-weight%3D%22700%22%20fill%3D%22%23155d44%22%3E%EC%82%AC%EC%A7%84%20%EC%84%A0%ED%83%9D%3C/text%3E%3Crect%20x%3D%22240%22%20y%3D%22610%22%20width%3D%22190%22%20height%3D%2248%22%20rx%3D%2212%22%20fill%3D%22%231f7a5a%22/%3E%3Ctext%20x%3D%22275%22%20y%3D%22641%22%20font-family%3D%22Arial%22%20font-size%3D%2218%22%20font-weight%3D%22700%22%20fill%3D%22white%22%3EAI%EB%A1%9C%20%EC%8B%9D%EC%9E%AC%EB%A3%8C%20%EC%B0%BE%EA%B8%B0%3C/text%3E%3Crect%20x%3D%22610%22%20y%3D%22185%22%20width%3D%22545%22%20height%3D%22500%22%20rx%3D%2224%22%20fill%3D%22white%22%20stroke%3D%22%23dfe7e2%22/%3E%3Ctext%20x%3D%22645%22%20y%3D%22235%22%20font-family%3D%22Arial%22%20font-size%3D%2226%22%20font-weight%3D%22700%22%20fill%3D%22%23203248%22%3E3%20%20%EC%8B%9D%EC%9E%AC%EB%A3%8C%20%ED%99%95%EC%9D%B8%3C/text%3E%3Ctext%20x%3D%22645%22%20y%3D%22280%22%20font-family%3D%22Arial%22%20font-size%3D%2218%22%20fill%3D%22%236f7d85%22%3E%EB%B6%84%EC%84%9D%20%EC%A0%84%20%EB%8C%80%EA%B8%B0%20%EC%83%81%ED%83%9C%3C/text%3E%3C/svg%3E" alt="사진 선택 화면 캡처"><div class="caption"><b>01. 사진 선택</b><span>냉장고 사진 업로드와 미리보기 화면</span></div></article>
+        <article class="shot-card"><img id="shot2" src="data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%221200%22%20height%3D%22750%22%3E%3Crect%20width%3D%221200%22%20height%3D%22750%22%20fill%3D%22%23f4f7f5%22/%3E%3Crect%20x%3D%2235%22%20y%3D%2235%22%20width%3D%221130%22%20height%3D%2290%22%20rx%3D%2222%22%20fill%3D%22%23193a31%22/%3E%3Ctext%20x%3D%2270%22%20y%3D%2290%22%20font-family%3D%22Arial%22%20font-size%3D%2232%22%20font-weight%3D%22700%22%20fill%3D%22white%22%3E%F0%9F%A5%AC%20%EB%83%89%EC%9E%A5%EA%B3%A0%20AI%20%EB%8F%84%EC%9A%B0%EB%AF%B8%20%C2%B7%20DEMO%3C/text%3E%3Crect%20x%3D%2255%22%20y%3D%22165%22%20width%3D%221090%22%20height%3D%22520%22%20rx%3D%2224%22%20fill%3D%22white%22%20stroke%3D%22%23dfe7e2%22/%3E%3Ctext%20x%3D%2290%22%20y%3D%22215%22%20font-family%3D%22Arial%22%20font-size%3D%2226%22%20font-weight%3D%22700%22%20fill%3D%22%23203248%22%3E3%20%20%EC%8B%9D%EC%9E%AC%EB%A3%8C%20%ED%99%95%EC%9D%B8%3C/text%3E%3Ctext%20x%3D%2290%22%20y%3D%22250%22%20font-family%3D%22Arial%22%20font-size%3D%2216%22%20fill%3D%22%236f7d85%22%3EAI%20%EA%B2%B0%EA%B3%BC%EB%A5%BC%20%EC%9E%90%EB%8F%99%20%ED%99%95%EC%A0%95%ED%95%98%EC%A7%80%20%EC%95%8A%EA%B3%A0%20%EC%82%AC%EC%9A%A9%EC%9E%90%EA%B0%80%20%EC%A7%81%EC%A0%91%20%EA%B2%80%ED%86%A0%ED%95%A9%EB%8B%88%EB%8B%A4.%3C/text%3E%3Cg%20font-family%3D%22Arial%22%20font-size%3D%2220%22%3E%3Crect%20x%3D%2290%22%20y%3D%22290%22%20width%3D%221020%22%20height%3D%2258%22%20rx%3D%2214%22%20fill%3D%22%23fbfcfb%22%20stroke%3D%22%23dfe7e2%22/%3E%3Ctext%20x%3D%22110%22%20y%3D%22327%22%3E%E2%98%91%20%20%EB%8B%AC%EA%B1%80%3C/text%3E%3Ctext%20x%3D%22340%22%20y%3D%22327%22%20fill%3D%22%23176145%22%3E%ED%99%95%EC%8B%A4%3C/text%3E%3Ctext%20x%3D%22930%22%20y%3D%22327%22%20fill%3D%22%23315771%22%3E%EC%88%98%EC%A0%95%3C/text%3E%3Ctext%20x%3D%221030%22%20y%3D%22327%22%20fill%3D%22%239b3030%22%3E%EC%82%AD%EC%A0%9C%3C/text%3E%3Crect%20x%3D%2290%22%20y%3D%22360%22%20width%3D%221020%22%20height%3D%2258%22%20rx%3D%2214%22%20fill%3D%22%23fbfcfb%22%20stroke%3D%22%23dfe7e2%22/%3E%3Ctext%20x%3D%22110%22%20y%3D%22397%22%3E%E2%98%91%20%20%EC%96%91%ED%8C%8C%3C/text%3E%3Ctext%20x%3D%22340%22%20y%3D%22397%22%20fill%3D%22%238a6400%22%3E%EB%B3%B4%ED%86%B5%3C/text%3E%3Ctext%20x%3D%22930%22%20y%3D%22397%22%20fill%3D%22%23315771%22%3E%EC%88%98%EC%A0%95%3C/text%3E%3Ctext%20x%3D%221030%22%20y%3D%22397%22%20fill%3D%22%239b3030%22%3E%EC%82%AD%EC%A0%9C%3C/text%3E%3Crect%20x%3D%2290%22%20y%3D%22430%22%20width%3D%221020%22%20height%3D%2258%22%20rx%3D%2214%22%20fill%3D%22%23fbfcfb%22%20stroke%3D%22%23dfe7e2%22/%3E%3Ctext%20x%3D%22110%22%20y%3D%22467%22%3E%E2%98%91%20%20%EB%91%90%EB%B6%80%3C/text%3E%3Ctext%20x%3D%22340%22%20y%3D%22467%22%20fill%3D%22%23176145%22%3E%ED%99%95%EC%8B%A4%3C/text%3E%3Ctext%20x%3D%22930%22%20y%3D%22467%22%20fill%3D%22%23315771%22%3E%EC%88%98%EC%A0%95%3C/text%3E%3Ctext%20x%3D%221030%22%20y%3D%22467%22%20fill%3D%22%239b3030%22%3E%EC%82%AD%EC%A0%9C%3C/text%3E%3C/g%3E%3Crect%20x%3D%2290%22%20y%3D%22540%22%20width%3D%22170%22%20height%3D%2248%22%20rx%3D%2212%22%20fill%3D%22%23eaf6f0%22/%3E%3Ctext%20x%3D%22125%22%20y%3D%22571%22%20font-family%3D%22Arial%22%20font-size%3D%2218%22%20font-weight%3D%22700%22%20fill%3D%22%23155d44%22%3E%2B%20%EC%8B%9D%EC%9E%AC%EB%A3%8C%20%EC%B6%94%EA%B0%80%3C/text%3E%3Crect%20x%3D%22280%22%20y%3D%22540%22%20width%3D%22230%22%20height%3D%2248%22%20rx%3D%2212%22%20fill%3D%22%231f7a5a%22/%3E%3Ctext%20x%3D%22325%22%20y%3D%22571%22%20font-family%3D%22Arial%22%20font-size%3D%2218%22%20font-weight%3D%22700%22%20fill%3D%22white%22%3E%EC%9D%B4%20%EC%9E%AC%EB%A3%8C%EB%A1%9C%20%EC%9A%94%EB%A6%AC%20%EC%B6%94%EC%B2%9C%3C/text%3E%3C/svg%3E" alt="식재료 확인 화면 캡처"><div class="caption"><b>02. 식재료 확인</b><span>분석 결과를 사용자가 체크·수정·삭제하는 화면</span></div></article>
+        <article class="shot-card"><img id="shot3" src="data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%221200%22%20height%3D%22750%22%3E%3Crect%20width%3D%221200%22%20height%3D%22750%22%20fill%3D%22%23f4f7f5%22/%3E%3Crect%20x%3D%2235%22%20y%3D%2235%22%20width%3D%221130%22%20height%3D%2290%22%20rx%3D%2222%22%20fill%3D%22%23193a31%22/%3E%3Ctext%20x%3D%2270%22%20y%3D%2290%22%20font-family%3D%22Arial%22%20font-size%3D%2232%22%20font-weight%3D%22700%22%20fill%3D%22white%22%3E%F0%9F%A5%AC%20%EB%83%89%EC%9E%A5%EA%B3%A0%20AI%20%EB%8F%84%EC%9A%B0%EB%AF%B8%20%C2%B7%20%EC%B6%94%EC%B2%9C%20%EA%B2%B0%EA%B3%BC%3C/text%3E%3Crect%20x%3D%2255%22%20y%3D%22160%22%20width%3D%221090%22%20height%3D%22530%22%20rx%3D%2224%22%20fill%3D%22white%22%20stroke%3D%22%23dfe7e2%22/%3E%3Ctext%20x%3D%2290%22%20y%3D%22210%22%20font-family%3D%22Arial%22%20font-size%3D%2226%22%20font-weight%3D%22700%22%20fill%3D%22%23203248%22%3E4%20%20AI%20%EC%9A%94%EB%A6%AC%20%EC%B6%94%EC%B2%9C%3C/text%3E%3Cg%20font-family%3D%22Arial%22%3E%3Crect%20x%3D%2290%22%20y%3D%22250%22%20width%3D%221020%22%20height%3D%22115%22%20rx%3D%2218%22%20fill%3D%22%23fbfdfc%22%20stroke%3D%22%23dfe7e2%22/%3E%3Ccircle%20cx%3D%22125%22%20cy%3D%22285%22%20r%3D%2218%22%20fill%3D%22%231f7a5a%22/%3E%3Ctext%20x%3D%22119%22%20y%3D%22292%22%20font-size%3D%2216%22%20fill%3D%22white%22%3E1%3C/text%3E%3Ctext%20x%3D%22155%22%20y%3D%22293%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%23203248%22%3E%EB%91%90%EB%B6%80%20%EB%8B%AC%EA%B1%80%EB%B6%80%EC%B9%A8%3C/text%3E%3Ctext%20x%3D%22155%22%20y%3D%22327%22%20font-size%3D%2216%22%20fill%3D%22%23155d44%22%3E%EC%82%AC%EC%9A%A9%20%EC%9E%AC%EB%A3%8C%3C/text%3E%3Ctext%20x%3D%22270%22%20y%3D%22327%22%20font-size%3D%2216%22%20fill%3D%22%2324313a%22%3E%EB%91%90%EB%B6%80%2C%20%EB%8B%AC%EA%B1%80%2C%20%EB%8C%80%ED%8C%8C%3C/text%3E%3Crect%20x%3D%2290%22%20y%3D%22385%22%20width%3D%221020%22%20height%3D%22115%22%20rx%3D%2218%22%20fill%3D%22%23fbfdfc%22%20stroke%3D%22%23dfe7e2%22/%3E%3Ccircle%20cx%3D%22125%22%20cy%3D%22420%22%20r%3D%2218%22%20fill%3D%22%231f7a5a%22/%3E%3Ctext%20x%3D%22119%22%20y%3D%22427%22%20font-size%3D%2216%22%20fill%3D%22white%22%3E2%3C/text%3E%3Ctext%20x%3D%22155%22%20y%3D%22428%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%23203248%22%3E%EC%96%91%ED%8C%8C%20%EB%8B%AC%EA%B1%80%EB%B3%B6%EC%9D%8C%3C/text%3E%3Ctext%20x%3D%22155%22%20y%3D%22462%22%20font-size%3D%2216%22%20fill%3D%22%23155d44%22%3E%EC%B6%94%EA%B0%80%20%EC%9E%AC%EB%A3%8C%3C/text%3E%3Ctext%20x%3D%22270%22%20y%3D%22462%22%20font-size%3D%2216%22%20fill%3D%22%2324313a%22%3E%EA%B0%84%EC%9E%A5%2C%20%EC%8B%9D%EC%9A%A9%EC%9C%A0%3C/text%3E%3Crect%20x%3D%2290%22%20y%3D%22520%22%20width%3D%221020%22%20height%3D%22115%22%20rx%3D%2218%22%20fill%3D%22%23fbfdfc%22%20stroke%3D%22%23dfe7e2%22/%3E%3Ccircle%20cx%3D%22125%22%20cy%3D%22555%22%20r%3D%2218%22%20fill%3D%22%231f7a5a%22/%3E%3Ctext%20x%3D%22119%22%20y%3D%22562%22%20font-size%3D%2216%22%20fill%3D%22white%22%3E3%3C/text%3E%3Ctext%20x%3D%22155%22%20y%3D%22563%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%23203248%22%3E%EA%B0%84%EB%8B%A8%20%EB%91%90%EB%B6%80%EC%B1%84%EC%86%8C%EB%B3%B6%EC%9D%8C%3C/text%3E%3Ctext%20x%3D%22155%22%20y%3D%22597%22%20font-size%3D%2216%22%20fill%3D%22%23155d44%22%3E%EA%B0%84%EB%8B%A8%20%EC%A1%B0%EB%A6%AC%EB%B2%95%3C/text%3E%3Ctext%20x%3D%22270%22%20y%3D%22597%22%20font-size%3D%2216%22%20fill%3D%22%2324313a%22%3E%EC%B1%84%EC%86%8C%20%EB%B3%B6%EA%B8%B0%20%E2%86%92%20%EB%91%90%EB%B6%80%20%EB%84%A3%EA%B8%B0%20%E2%86%92%20%EA%B0%84%20%EB%A7%9E%EC%B6%94%EA%B8%B0%3C/text%3E%3C/g%3E%3C/svg%3E" alt="요리 추천 결과 화면 캡처"><div class="caption"><b>03. 요리 추천</b><span>최종 선택 재료를 기준으로 추천 결과를 보여주는 화면</span></div></article>
+      </div>
+    </section>
+
+    <section class="hero">
+      <div>
+        <h1>🥬 냉장고 AI 도우미</h1>
+        <p>
+          냉장고 사진에서 식재료를 찾고, 사람이 직접 확인한 뒤<br />
+          그 재료로 간단한 요리를 추천받는 교육용 웹앱입니다.
+        </p>
+      </div>
+      <div class="hero-icon" aria-hidden="true">🧊</div>
+    </section>
+
+    <div class="step-strip" aria-label="진행 단계">
+      <div class="step-chip active" id="step1Chip">1. API 연결</div>
+      <div class="step-chip" id="step2Chip">2. 사진 선택</div>
+      <div class="step-chip" id="step3Chip">3. AI 분석</div>
+      <div class="step-chip" id="step4Chip">4. 사람 확인</div>
+      <div class="step-chip" id="step5Chip">5. 요리 추천</div>
+    </div>
+
+    <!-- =======================================================
+         STEP 1. OpenAI API 연결 화면
+         ======================================================= -->
+    <section id="connectScreen" class="card connect-card">
+      <h2 class="section-title">
+        <span class="number">1</span>
+        OPENAI CONNECT
+      </h2>
+
+      <div class="field">
+        <label for="apiKeyInput">OpenAI API Key</label>
+        <!-- password 타입이므로 화면에 키가 그대로 보이지 않습니다. -->
+        <input
+          id="apiKeyInput"
+          class="input"
+          type="password"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="sk-..."
+        />
+      </div>
+
+      <div class="field">
+        <label for="modelSelect">Model</label>
+        <select id="modelSelect" class="select">
+          <option value="gpt-5">GPT-5</option>
+        </select>
+      </div>
+
+      <div class="notice">
+        <strong>교육용 로컬 실습입니다.</strong><br />
+        실제 공개 서비스에서는 API Key를 브라우저에 입력하는 방식을 사용하지 마세요.<br />
+        이 예제는 Key를 localStorage, sessionStorage, cookie, IndexedDB, URL에 저장하지 않습니다.
+      </div>
+
+      <button id="connectBtn" class="button primary full">
+        연결 테스트
+      </button>
+
+      <button id="demoConnectBtn" class="button secondary full" style="margin-top:10px;">
+        API 없이 데모로 시작
+      </button>
+
+      <div id="connectStatus" class="status" role="status"></div>
+    </section>
+
+    <!-- =======================================================
+         연결 성공 후 사용하는 메인 앱 화면
+         ======================================================= -->
+    <section id="mainApp">
+      <div id="demoRibbon" class="demo-ribbon">포트폴리오 데모 모드 · API 호출 없이 샘플 데이터로 기능 흐름을 체험하고 있습니다.</div>
+      <div class="topbar">
+        <div class="connected-badge">
+          <span class="connected-dot"></span>
+          <span id="connectionLabel">✓ OpenAI Connected · GPT-5</span>
+        </div>
+
+        <button id="disconnectBtn" class="button danger">
+          API 연결 해제
+        </button>
+      </div>
+
+      <div class="workspace">
+        <!-- 왼쪽: 사진 선택 및 미리보기 -->
+        <div class="stack">
+          <section class="card">
+            <h2 class="section-title">
+              <span class="number">2</span>
+              냉장고 사진
+            </h2>
+
+            <div class="upload-zone">
+              <div id="emptyPreview" class="empty-preview">
+                <span class="big">📷</span>
+                JPG 또는 PNG 냉장고 사진을 선택하세요.
+              </div>
+              <img
+                id="previewImage"
+                class="preview-image"
+                alt="선택한 냉장고 사진 미리보기"
+              />
+            </div>
+
+            <div class="upload-controls">
+              <label for="imageInput" class="button secondary">
+                사진 선택
+              </label>
+
+              <input
+                id="imageInput"
+                type="file"
+                accept="image/jpeg,image/png,.jpg,.jpeg,.png"
+              />
+
+              <button id="analyzeBtn" class="button primary" disabled>
+                AI로 식재료 찾기
+              </button>
+            </div>
+
+            <div class="helper">
+              사진은 FileReader로 읽어 base64 data URL 형태로 API에 전달합니다.
+            </div>
+
+            <div id="analysisLoading" class="loading">
+              <span class="spinner"></span>
+              AI가 냉장고 사진을 살펴보고 있습니다...
+            </div>
+
+            <div id="analysisStatus" class="status" role="status"></div>
+          </section>
+        </div>
+
+        <!-- 오른쪽: 식재료 확인 + 요리 추천 -->
+        <div class="stack">
+          <section class="card">
+            <h2 class="section-title">
+              <span class="number">3</span>
+              식재료 확인
+            </h2>
+
+            <p class="helper" style="margin-top:-8px;">
+              AI 결과는 자동 확정되지 않습니다. 체크·수정·삭제하거나 직접 추가한 뒤 추천을 받으세요.
+            </p>
+
+            <div id="ingredientList" class="ingredient-list">
+              <div class="empty-list">
+                아직 분석된 식재료가 없습니다.<br />
+                냉장고 사진을 선택하고 AI 분석을 실행하세요.
+              </div>
+            </div>
+
+            <div class="button-row" style="margin-top:15px;">
+              <button id="addIngredientBtn" class="button secondary">
+                + 식재료 추가
+              </button>
+
+              <button id="recommendBtn" class="button primary" disabled>
+                이 재료로 요리 추천
+              </button>
+            </div>
+
+            <div id="recipeLoading" class="loading">
+              <span class="spinner"></span>
+              만들기 쉬운 요리를 고르고 있습니다...
+            </div>
+
+            <div id="recipeStatus" class="status" role="status"></div>
+          </section>
+
+          <section class="card">
+            <h2 class="section-title">
+              <span class="number">4</span>
+              AI 요리 추천
+            </h2>
+
+            <div id="recommendations" class="recommendations">
+              <div class="empty-list">
+                확인한 식재료를 바탕으로 요리 3개를 추천해드립니다.
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <p class="footer-note">
+      교육용 예제 · API 사용량에 따라 OpenAI API 비용이 발생할 수 있습니다.
+    </p>
+  </main>
+
+  <script>
+    "use strict";
+
+    /* =========================================================
+       0. 앱에서 사용할 값
+       =========================================================
+
+       중요:
+       apiKey 변수는 JavaScript 메모리에만 존재합니다.
+       localStorage / sessionStorage / cookie / IndexedDB 등에
+       저장하는 코드는 이 파일에 없습니다.
+
+       새로고침하면 JavaScript 실행 환경이 새로 만들어지므로
+       이 변수의 값도 사라집니다.
+       ========================================================= */
+
+    let apiKey = "";
+    let selectedModel = "gpt-5";
+    let imageDataUrl = "";
+    let ingredients = [];
+    let demoMode = false;
+
+    const API_URL = "https://api.openai.com/v1/responses";
+
+    /* =========================================================
+       1. HTML 요소를 JavaScript에서 쉽게 사용하기 위한 연결
+       ========================================================= */
+    const connectScreen = document.getElementById("connectScreen");
+    const mainApp = document.getElementById("mainApp");
+
+    const apiKeyInput = document.getElementById("apiKeyInput");
+    const modelSelect = document.getElementById("modelSelect");
+    const connectBtn = document.getElementById("connectBtn");
+    const connectStatus = document.getElementById("connectStatus");
+    const disconnectBtn = document.getElementById("disconnectBtn");
+
+    const imageInput = document.getElementById("imageInput");
+    const previewImage = document.getElementById("previewImage");
+    const emptyPreview = document.getElementById("emptyPreview");
+    const analyzeBtn = document.getElementById("analyzeBtn");
+    const analysisLoading = document.getElementById("analysisLoading");
+    const analysisStatus = document.getElementById("analysisStatus");
+
+    const ingredientList = document.getElementById("ingredientList");
+    const addIngredientBtn = document.getElementById("addIngredientBtn");
+    const recommendBtn = document.getElementById("recommendBtn");
+    const recipeLoading = document.getElementById("recipeLoading");
+    const recipeStatus = document.getElementById("recipeStatus");
+    const recommendations = document.getElementById("recommendations");
+    const startDemoBtn = document.getElementById("startDemoBtn");
+    const goRealBtn = document.getElementById("goRealBtn");
+    const demoConnectBtn = document.getElementById("demoConnectBtn");
+    const demoRibbon = document.getElementById("demoRibbon");
+    const connectionLabel = document.getElementById("connectionLabel");
+
+    const stepChips = [
+      document.getElementById("step1Chip"),
+      document.getElementById("step2Chip"),
+      document.getElementById("step3Chip"),
+      document.getElementById("step4Chip"),
+      document.getElementById("step5Chip")
+    ];
+
+    /* =========================================================
+       2. 공통 함수
+       ========================================================= */
+
+    // 상태 메시지를 화면에 표시하는 함수입니다.
+    function showStatus(element, type, message) {
+      element.className = "status show " + type;
+      element.textContent = message;
+    }
+
+    // 상태 메시지를 숨기는 함수입니다.
+    function clearStatus(element) {
+      element.className = "status";
+      element.textContent = "";
+    }
+
+    // 현재 진행 단계의 색상을 바꿉니다.
+    function setStep(stepNumber) {
+      stepChips.forEach((chip, index) => {
+        chip.classList.toggle("active", index < stepNumber);
+      });
+    }
+
+    // 버튼을 작업 중 상태로 바꾸는 간단한 함수입니다.
+    function setButtonBusy(button, isBusy, busyText, normalText) {
+      button.disabled = isBusy;
+      button.textContent = isBusy ? busyText : normalText;
+    }
+
+    /*
+      Responses API의 결과 JSON 안에서 output_text를 찾습니다.
+
+      SDK를 사용할 때는 response.output_text처럼 쉽게 접근할 수 있지만,
+      이 예제는 SDK 없이 fetch()만 사용하므로 output 배열을 직접 확인합니다.
+    */
+    function extractOutputText(responseJson) {
+      if (typeof responseJson.output_text === "string" && responseJson.output_text) {
+        return responseJson.output_text;
+      }
+
+      if (!Array.isArray(responseJson.output)) {
+        return "";
+      }
+
+      const textParts = [];
+
+      for (const item of responseJson.output) {
+        if (!Array.isArray(item.content)) continue;
+
+        for (const content of item.content) {
+          if (content.type === "output_text" && typeof content.text === "string") {
+            textParts.push(content.text);
+          }
+        }
+      }
+
+      return textParts.join("\n").trim();
+    }
+
+    /*
+      OpenAI Responses API를 호출하는 공통 함수입니다.
+
+      여기에서도 apiKey를 어디에도 저장하지 않습니다.
+      Authorization 헤더에 넣어 현재 요청에서만 사용합니다.
+    */
+    async function callOpenAI(body) {
+      if (!apiKey) {
+        throw new Error("API_KEY_MISSING");
+      }
+
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + apiKey
+        },
+        body: JSON.stringify(body)
+      });
+
+      let responseJson = {};
+
+      try {
+        responseJson = await response.json();
+      } catch (parseError) {
+        throw new Error("INVALID_API_RESPONSE");
+      }
+
+      if (!response.ok) {
+        // API 오류 상세 내용을 console에 출력하지 않습니다.
+        const message =
+          responseJson &&
+          responseJson.error &&
+          responseJson.error.message
+            ? responseJson.error.message
+            : "API_REQUEST_FAILED";
+
+        throw new Error(message);
+      }
+
+      return responseJson;
+    }
+
+    /* =========================================================
+       STEP 1~2. OpenAI API 연결 테스트
+       ========================================================= */
+    const DEMO_INGREDIENTS = [
+      { name: "달걀", confidence: "high", checked: true },
+      { name: "대파", confidence: "high", checked: true },
+      { name: "양파", confidence: "medium", checked: true },
+      { name: "두부", confidence: "high", checked: true },
+      { name: "당근", confidence: "medium", checked: true }
+    ];
+
+    const DEMO_RECIPES = [
+      { name:"두부 달걀부침", used_ingredients:["두부","달걀","대파"], extra_ingredients:["소금","식용유"], steps:["두부를 먹기 좋게 자릅니다.","달걀에 잘게 썬 대파와 소금을 넣어 섞습니다.","두부에 달걀물을 입혀 팬에 노릇하게 굽습니다."] },
+      { name:"양파 달걀볶음", used_ingredients:["달걀","양파","당근"], extra_ingredients:["간장","식용유"], steps:["양파와 당근을 얇게 썹니다.","팬에 채소를 먼저 볶습니다.","달걀을 넣고 빠르게 섞어 익힌 뒤 간장으로 간합니다."] },
+      { name:"간단 두부채소볶음", used_ingredients:["두부","양파","당근","대파"], extra_ingredients:["간장","참기름"], steps:["두부와 채소를 한입 크기로 준비합니다.","채소를 볶다가 두부를 넣습니다.","간장으로 간하고 마지막에 대파와 참기름을 넣습니다."] }
+    ];
+
+    function enterDemoMode() {
+      demoMode = true;
+      connectScreen.style.display = "none";
+      mainApp.style.display = "block";
+      demoRibbon.classList.add("show");
+      connectionLabel.textContent = "✓ Portfolio Demo · API 불필요";
+      setStep(2);
+      mainApp.scrollIntoView({behavior:"smooth", block:"start"});
+    }
+
+    startDemoBtn.addEventListener("click", enterDemoMode);
+    demoConnectBtn.addEventListener("click", enterDemoMode);
+    goRealBtn.addEventListener("click", () => connectScreen.scrollIntoView({behavior:"smooth", block:"center"}));
+
+    connectBtn.addEventListener("click", async () => {
+      clearStatus(connectStatus);
+
+      // 입력창에 적은 키를 메모리 변수로 복사합니다.
+      // trim()으로 앞뒤 공백만 제거합니다.
+      const enteredKey = apiKeyInput.value.trim();
+
+      if (!enteredKey) {
+        showStatus(connectStatus, "error", "OpenAI API Key를 입력해주세요.");
+        return;
+      }
+
+      selectedModel = modelSelect.value;
+      apiKey = enteredKey;
+
+      setButtonBusy(connectBtn, true, "연결 확인 중...", "연결 테스트");
+
+      try {
+        /*
+          연결 확인용으로 아주 짧은 요청을 보냅니다.
+          출력도 짧게 제한해서 불필요한 사용량을 줄입니다.
+        */
+        await callOpenAI({
+          model: selectedModel,
+          input: "Reply only with OK.",
+          max_output_tokens: 20,
+          store: false
+        });
+
+        showStatus(connectStatus, "success", "✓ OpenAI Connected");
+
+        /*
+          연결 성공 후 입력창에서도 키 문자열을 지웁니다.
+          실제 사용할 키는 apiKey 변수(현재 실행 메모리)에만 남습니다.
+        */
+        apiKeyInput.value = "";
+
+        // 연결 화면을 감추고 메인 앱을 보여줍니다.
+        setTimeout(() => {
+          connectScreen.style.display = "none";
+          mainApp.style.display = "block";
+          setStep(2);
+        }, 350);
+
+      } catch (error) {
+        // 연결 실패 시 메모리 변수에서도 키를 즉시 제거합니다.
+        apiKey = "";
+        apiKeyInput.value = "";
+
+        showStatus(
+          connectStatus,
+          "error",
+          "✕ Connection Failed\nAPI Key와 API 연결 상태를 확인해주세요."
+        );
+      } finally {
+        setButtonBusy(connectBtn, false, "연결 확인 중...", "연결 테스트");
+      }
+    });
+
+    /* =========================================================
+       STEP 3. 냉장고 사진 선택 + FileReader로 base64 변환
+       ========================================================= */
+    imageInput.addEventListener("change", () => {
+      clearStatus(analysisStatus);
+
+      const file = imageInput.files && imageInput.files[0];
+
+      if (!file) {
+        return;
+      }
+
+      const allowedTypes = ["image/jpeg", "image/png"];
+
+      if (!allowedTypes.includes(file.type)) {
+        imageInput.value = "";
+        imageDataUrl = "";
+        analyzeBtn.disabled = true;
+
+        showStatus(
+          analysisStatus,
+          "error",
+          "JPG 또는 PNG 이미지 파일만 선택해주세요."
+        );
+        return;
+      }
+
+      /*
+        너무 큰 이미지는 API 요청 자체가 무거워질 수 있습니다.
+        여기서는 20MB를 넘으면 먼저 사용자에게 줄이도록 안내합니다.
+      */
+      const maxFileSize = 20 * 1024 * 1024;
+
+      if (file.size > maxFileSize) {
+        imageInput.value = "";
+        imageDataUrl = "";
+        analyzeBtn.disabled = true;
+
+        showStatus(
+          analysisStatus,
+          "error",
+          "이미지 크기를 줄여 다시 시도해주세요."
+        );
+        return;
+      }
+
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        /*
+          reader.result에는 다음처럼 base64 data URL이 들어옵니다.
+          예: data:image/jpeg;base64,/9j/4AAQ...
+        */
+        imageDataUrl = reader.result;
+
+        previewImage.src = imageDataUrl;
+        previewImage.style.display = "block";
+        emptyPreview.style.display = "none";
+
+        analyzeBtn.disabled = false;
+        setStep(3);
+
+        // 새 사진을 선택했으므로 이전 분석/추천 결과는 초기화합니다.
+        ingredients = [];
+        renderIngredients();
+
+        recommendations.innerHTML = `
+          <div class="empty-list">
+            새 사진을 분석한 뒤 요리를 추천받을 수 있습니다.
+          </div>
+        `;
+      };
+
+      reader.onerror = () => {
+        imageDataUrl = "";
+        analyzeBtn.disabled = true;
+
+        showStatus(
+          analysisStatus,
+          "error",
+          "이미지를 읽을 수 없습니다. 다른 사진으로 다시 시도해주세요."
+        );
+      };
+
+      // 실제로 이미지를 base64 data URL로 읽는 부분입니다.
+      reader.readAsDataURL(file);
+    });
+
+    /* =========================================================
+       STEP 4. AI로 냉장고 이미지 분석
+       ========================================================= */
+    analyzeBtn.addEventListener("click", async () => {
+      clearStatus(analysisStatus);
+      clearStatus(recipeStatus);
+
+      if (demoMode) {
+        analyzeBtn.disabled = true;
+        analysisLoading.classList.add("show");
+        setTimeout(() => {
+          ingredients = DEMO_INGREDIENTS.map(x => ({...x}));
+          renderIngredients();
+          analysisLoading.classList.remove("show");
+          showStatus(analysisStatus, "success", "데모 분석 완료: 샘플 식재료를 불러왔습니다. 직접 수정·삭제·추가해보세요.");
+          setStep(4);
+          analyzeBtn.disabled = false;
+        }, 500);
+        return;
+      }
+
+      if (!apiKey) {
+        showStatus(
+          analysisStatus,
+          "error",
+          "API 연결을 확인해주세요."
+        );
+        return;
+      }
+
+      if (!imageDataUrl) {
+        showStatus(
+          analysisStatus,
+          "error",
+          "먼저 냉장고 사진을 선택해주세요."
+        );
+        return;
+      }
+
+      analyzeBtn.disabled = true;
+      analysisLoading.classList.add("show");
+
+      try {
+        /*
+          Structured Outputs(JSON Schema)을 사용합니다.
+          AI가 "items 배열 + name + confidence" 형식을 지키게 해서
+          화면에서 결과를 다루기 쉽게 합니다.
+        */
+        const responseJson = await callOpenAI({
+          model: selectedModel,
+          store: false,
+
+          input: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "input_text",
+                  text:
+                    "이 냉장고 사진을 분석해서 식재료를 찾아주세요. " +
+                    "사진에서 실제로 확인할 수 있는 식재료만 찾으세요. " +
+                    "확실하지 않은 것은 추측해서 단정하지 말고 confidence를 uncertain으로 표시하세요. " +
+                    "같은 식재료는 중복해서 적지 마세요. " +
+                    "포장지의 글자를 읽을 수 있더라도 사진에서 식품임을 합리적으로 확인할 수 있을 때만 포함하세요."
+                },
+                {
+                  type: "input_image",
+                  image_url: imageDataUrl,
+                  detail: "auto"
+                }
+              ]
+            }
+          ],
+
+          text: {
+            format: {
+              type: "json_schema",
+              name: "fridge_ingredients",
+              strict: true,
+              schema: {
+                type: "object",
+                additionalProperties: false,
+                properties: {
+                  items: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      additionalProperties: false,
+                      properties: {
+                        name: {
+                          type: "string"
+                        },
+                        confidence: {
+                          type: "string",
+                          enum: ["high", "medium", "uncertain"]
+                        }
+                      },
+                      required: ["name", "confidence"]
+                    }
+                  }
+                },
+                required: ["items"]
+              }
+            }
+          }
+        });
+
+        const outputText = extractOutputText(responseJson);
+
+        if (!outputText) {
+          throw new Error("EMPTY_AI_RESPONSE");
+        }
+
+        const parsed = JSON.parse(outputText);
+
+        if (!parsed || !Array.isArray(parsed.items)) {
+          throw new Error("INVALID_INGREDIENT_FORMAT");
+        }
+
+        /*
+          앱에서 사람이 확인할 수 있도록 checked 값을 추가합니다.
+          AI 결과를 바로 확정하지 않는 것이 핵심입니다.
+        */
+        ingredients = parsed.items
+          .filter(item => item && typeof item.name === "string")
+          .map(item => ({
+            name: item.name.trim(),
+            confidence: item.confidence || "uncertain",
+            checked: true
+          }))
+          .filter(item => item.name.length > 0);
+
+        renderIngredients();
+
+        if (ingredients.length === 0) {
+          showStatus(
+            analysisStatus,
+            "info",
+            "사진에서 확실하게 확인할 수 있는 식재료를 찾지 못했습니다. 직접 식재료를 추가할 수 있습니다."
+          );
+        } else {
+          showStatus(
+            analysisStatus,
+            "success",
+            "식재료를 찾았습니다. 체크 상태와 이름을 직접 확인해주세요."
+          );
+        }
+
+        setStep(4);
+
+      } catch (error) {
+        /*
+          오류 원인을 사용자에게 너무 기술적으로 보여주지 않고,
+          초보자가 바로 행동할 수 있는 메시지로 안내합니다.
+        */
+        const message = String(error && error.message ? error.message : "");
+
+        if (
+          message.toLowerCase().includes("image") ||
+          message.toLowerCase().includes("payload") ||
+          message.toLowerCase().includes("size") ||
+          message.includes("413")
+        ) {
+          showStatus(
+            analysisStatus,
+            "error",
+            "이미지 크기를 줄여 다시 시도해주세요."
+          );
+        } else {
+          showStatus(
+            analysisStatus,
+            "error",
+            "AI 분석에 실패했습니다. API 연결을 확인해주세요. 계속 실패하면 이미지 크기를 줄여 다시 시도해주세요."
+          );
+        }
+
+      } finally {
+        analysisLoading.classList.remove("show");
+        analyzeBtn.disabled = false;
+      }
+    });
+
+    /* =========================================================
+       STEP 5. 사람이 식재료를 확인/수정/삭제/추가
+       ========================================================= */
+
+    // 현재 ingredients 배열을 화면의 체크박스 목록으로 다시 그립니다.
+    function renderIngredients() {
+      ingredientList.innerHTML = "";
+
+      if (ingredients.length === 0) {
+        ingredientList.innerHTML = `
+          <div class="empty-list">
+            식재료가 없습니다.<br />
+            AI 분석을 실행하거나 '+ 식재료 추가'를 눌러주세요.
+          </div>
+        `;
+        recommendBtn.disabled = true;
+        return;
+      }
+
+      ingredients.forEach((item, index) => {
+        const row = document.createElement("div");
+        row.className = "ingredient-row";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = item.checked;
+        checkbox.setAttribute("aria-label", item.name + " 선택");
+
+        checkbox.addEventListener("change", () => {
+          ingredients[index].checked = checkbox.checked;
+          updateRecommendButton();
+        });
+
+        const nameWrap = document.createElement("div");
+        nameWrap.className = "ingredient-name";
+
+        const nameText = document.createElement("span");
+        nameText.textContent = item.name;
+
+        const confidence = document.createElement("span");
+        confidence.className = "confidence " + item.confidence;
+
+        if (item.confidence === "high") {
+          confidence.textContent = "확실";
+        } else if (item.confidence === "medium") {
+          confidence.textContent = "보통";
+        } else {
+          confidence.textContent = "불확실";
+        }
+
+        nameWrap.appendChild(nameText);
+        nameWrap.appendChild(confidence);
+
+        const editButton = document.createElement("button");
+        editButton.className = "mini-btn edit";
+        editButton.textContent = "수정";
+
+        editButton.addEventListener("click", () => {
+          const newName = window.prompt("식재료 이름을 수정하세요.", item.name);
+
+          if (newName === null) return;
+
+          const trimmed = newName.trim();
+
+          if (!trimmed) {
+            alert("식재료 이름을 입력해주세요.");
+            return;
+          }
+
+          ingredients[index].name = trimmed;
+
+          /*
+            사람이 직접 수정한 항목이므로 AI confidence 배지는
+            더 이상 AI 확신도라고 보기 어렵습니다.
+            따라서 화면에서는 '확인' 의미로 high 상태를 사용합니다.
+          */
+          ingredients[index].confidence = "high";
+          renderIngredients();
+        });
+
+        const deleteButton = document.createElement("button");
+        deleteButton.className = "mini-btn delete";
+        deleteButton.textContent = "삭제";
+        deleteButton.classList.add("delete-cell");
+
+        deleteButton.addEventListener("click", () => {
+          ingredients.splice(index, 1);
+          renderIngredients();
+        });
+
+        row.appendChild(checkbox);
+        row.appendChild(nameWrap);
+        row.appendChild(editButton);
+        row.appendChild(deleteButton);
+
+        ingredientList.appendChild(row);
+      });
+
+      updateRecommendButton();
+    }
+
+    // 체크된 식재료가 1개 이상일 때만 추천 버튼을 활성화합니다.
+    function updateRecommendButton() {
+      const checkedCount = ingredients.filter(item => item.checked).length;
+      recommendBtn.disabled = checkedCount === 0;
+    }
+
+    // 식재료 직접 추가
+    addIngredientBtn.addEventListener("click", () => {
+      const name = window.prompt("추가할 식재료 이름을 입력하세요.");
+
+      if (name === null) return;
+
+      const trimmed = name.trim();
+
+      if (!trimmed) {
+        alert("식재료 이름을 입력해주세요.");
+        return;
+      }
+
+      ingredients.push({
+        name: trimmed,
+        confidence: "high",
+        checked: true
+      });
+
+      renderIngredients();
+      setStep(4);
+    });
+
+    /* =========================================================
+       STEP 6. 확인된 식재료로 요리 3개 추천
+       ========================================================= */
+    recommendBtn.addEventListener("click", async () => {
+      clearStatus(recipeStatus);
+
+      if (demoMode) {
+        const selectedIngredients = ingredients.filter(item => item.checked).map(item => item.name);
+        if (selectedIngredients.length === 0) {
+          showStatus(recipeStatus, "error", "추천에 사용할 식재료를 하나 이상 체크해주세요.");
+          return;
+        }
+        recipeLoading.classList.add("show");
+        recommendBtn.disabled = true;
+        setTimeout(() => {
+          renderRecipes(DEMO_RECIPES);
+          recipeLoading.classList.remove("show");
+          showStatus(recipeStatus, "success", "데모 추천 완료: 선택한 재료 기준 예시 요리 3개를 표시했습니다.");
+          setStep(5);
+          updateRecommendButton();
+        }, 500);
+        return;
+      }
+
+      if (!apiKey) {
+        showStatus(recipeStatus, "error", "API 연결을 확인해주세요.");
+        return;
+      }
+
+      const selectedIngredients = ingredients
+        .filter(item => item.checked)
+        .map(item => item.name);
+
+      if (selectedIngredients.length === 0) {
+        showStatus(
+          recipeStatus,
+          "error",
+          "추천에 사용할 식재료를 하나 이상 체크해주세요."
+        );
+        return;
+      }
+
+      recipeLoading.classList.add("show");
+      recommendBtn.disabled = true;
+
+      try {
+        /*
+          이미지 분석 결과가 아니라,
+          '사람이 수정하고 체크한 최종 식재료 목록'만 다시 AI에 보냅니다.
+        */
+        const responseJson = await callOpenAI({
+          model: selectedModel,
+          store: false,
+
+          input:
+            "다음은 사용자가 직접 확인한 냉장고 식재료입니다: " +
+            selectedIngredients.join(", ") +
+            ". 이 재료들을 최대한 활용해서 초보자도 쉽게 만들 수 있는 요리 정확히 3개를 한국어로 추천하세요. " +
+            "각 요리마다 요리 이름, 사용 재료, 추가로 있으면 좋은 재료, 3~5단계의 간단한 조리법을 작성하세요. " +
+            "추가 재료가 꼭 필요한 경우에는 그것이 냉장고에 있다고 가정하지 말고 반드시 추가 재료에 적으세요.",
+
+          text: {
+            format: {
+              type: "json_schema",
+              name: "easy_recipes",
+              strict: true,
+              schema: {
+                type: "object",
+                additionalProperties: false,
+                properties: {
+                  recipes: {
+                    type: "array",
+                    minItems: 3,
+                    maxItems: 3,
+                    items: {
+                      type: "object",
+                      additionalProperties: false,
+                      properties: {
+                        name: {
+                          type: "string"
+                        },
+                        used_ingredients: {
+                          type: "array",
+                          items: { type: "string" }
+                        },
+                        extra_ingredients: {
+                          type: "array",
+                          items: { type: "string" }
+                        },
+                        steps: {
+                          type: "array",
+                          minItems: 3,
+                          maxItems: 5,
+                          items: { type: "string" }
+                        }
+                      },
+                      required: [
+                        "name",
+                        "used_ingredients",
+                        "extra_ingredients",
+                        "steps"
+                      ]
+                    }
+                  }
+                },
+                required: ["recipes"]
+              }
+            }
+          }
+        });
+
+        const outputText = extractOutputText(responseJson);
+
+        if (!outputText) {
+          throw new Error("EMPTY_AI_RESPONSE");
+        }
+
+        const parsed = JSON.parse(outputText);
+
+        if (!parsed || !Array.isArray(parsed.recipes)) {
+          throw new Error("INVALID_RECIPE_FORMAT");
+        }
+
+        renderRecipes(parsed.recipes);
+
+        showStatus(
+          recipeStatus,
+          "success",
+          "확인한 식재료를 기준으로 요리 3개를 추천했습니다."
+        );
+
+        setStep(5);
+
+      } catch (error) {
+        showStatus(
+          recipeStatus,
+          "error",
+          "요리 추천을 불러오지 못했습니다. API 연결을 확인해주세요."
+        );
+      } finally {
+        recipeLoading.classList.remove("show");
+        updateRecommendButton();
+      }
+    });
+
+    // 추천받은 요리 데이터를 안전하게 DOM으로 만들어 화면에 표시합니다.
+    function renderRecipes(recipes) {
+      recommendations.innerHTML = "";
+
+      recipes.slice(0, 3).forEach((recipe, index) => {
+        const card = document.createElement("article");
+        card.className = "recipe-card";
+
+        const title = document.createElement("h3");
+
+        const number = document.createElement("span");
+        number.className = "recipe-number";
+        number.textContent = String(index + 1);
+
+        const titleText = document.createElement("span");
+        titleText.textContent = recipe.name || "추천 요리";
+
+        title.appendChild(number);
+        title.appendChild(titleText);
+
+        const grid = document.createElement("div");
+        grid.className = "recipe-grid";
+
+        addRecipeRow(
+          grid,
+          "사용 재료",
+          Array.isArray(recipe.used_ingredients)
+            ? recipe.used_ingredients.join(", ")
+            : "-"
+        );
+
+        addRecipeRow(
+          grid,
+          "추가 재료",
+          Array.isArray(recipe.extra_ingredients) &&
+          recipe.extra_ingredients.length > 0
+            ? recipe.extra_ingredients.join(", ")
+            : "없음"
+        );
+
+        addRecipeRow(
+          grid,
+          "간단 조리법",
+          Array.isArray(recipe.steps)
+            ? recipe.steps
+                .map((step, stepIndex) => (stepIndex + 1) + ". " + step)
+                .join("\n")
+            : "-"
+        );
+
+        card.appendChild(title);
+        card.appendChild(grid);
+        recommendations.appendChild(card);
+      });
+    }
+
+    function addRecipeRow(container, label, value) {
+      const labelElement = document.createElement("div");
+      labelElement.className = "recipe-label";
+      labelElement.textContent = label;
+
+      const valueElement = document.createElement("div");
+      valueElement.textContent = value;
+      valueElement.style.whiteSpace = "pre-line";
+
+      container.appendChild(labelElement);
+      container.appendChild(valueElement);
+    }
+
+    /* =========================================================
+       STEP 7. API 연결 해제
+       ========================================================= */
+    disconnectBtn.addEventListener("click", () => {
+      /*
+        API Key가 들어 있던 변수 값을 제거합니다.
+        문자열은 브라우저의 가비지 컬렉션 대상이 되며,
+        앱 상태도 처음으로 되돌립니다.
+      */
+      apiKey = "";
+      demoMode = false;
+      demoRibbon.classList.remove("show");
+      connectionLabel.textContent = "✓ OpenAI Connected · GPT-5";
+      selectedModel = "gpt-5";
+      imageDataUrl = "";
+      ingredients = [];
+
+      // 혹시 입력 요소에 남은 값도 모두 지웁니다.
+      apiKeyInput.value = "";
+      imageInput.value = "";
+      previewImage.removeAttribute("src");
+      previewImage.style.display = "none";
+      emptyPreview.style.display = "block";
+
+      renderIngredients();
+
+      recommendations.innerHTML = `
+        <div class="empty-list">
+          확인한 식재료를 바탕으로 요리 3개를 추천해드립니다.
+        </div>
+      `;
+
+      clearStatus(connectStatus);
+      clearStatus(analysisStatus);
+      clearStatus(recipeStatus);
+
+      analyzeBtn.disabled = true;
+
+      mainApp.style.display = "none";
+      connectScreen.style.display = "block";
+      setStep(1);
+
+      // 키 입력란으로 커서를 이동합니다.
+      apiKeyInput.focus();
+    });
+
+    /*
+      페이지를 떠날 때도 변수 값을 비웁니다.
+      새로고침 시에는 원래 JavaScript 메모리가 초기화되지만,
+      의도를 코드로도 명확히 표시했습니다.
+    */
+
+    // 포트폴리오 캡처 자동 상태 (스크린샷 제작용)
+    const captureState = new URLSearchParams(location.search).get("capture");
+    if (captureState) {
+      enterDemoMode();
+      if (captureState === "ingredients" || captureState === "recipes") {
+        ingredients = DEMO_INGREDIENTS.map(x => ({...x}));
+        renderIngredients();
+        setStep(4);
+      }
+      if (captureState === "recipes") {
+        renderRecipes(DEMO_RECIPES);
+        setStep(5);
+      }
+    }
+
+    window.addEventListener("pagehide", () => {
+      apiKey = "";
+      imageDataUrl = "";
+      ingredients = [];
+    });
+  </script>
+</body>
+</html>
